@@ -1,0 +1,227 @@
+﻿Build1=Default,b4a.example
+File1=1.bal
+FileGroup1=Default Group
+Group=Default Group
+Library1=core
+Library2=camera
+Library3=camera2
+Library4=zxingbarcodescanner
+Library5=phone
+Library6=runtimepermissions
+Library7=javaobject
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="5" android:targetSdkVersion="28"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.DarkTheme)~\n~'End of default text.~\n~
+Module1=Starter
+NumberOfFiles=1
+NumberOfLibraries=7
+NumberOfModules=1
+Version=9.801
+@EndOfDesignText@
+#Region  Project Attributes 
+	#ApplicationLabel: B4A Example_icon
+	#VersionCode: 2
+	#VersionName: 
+	'SupportedOrientations possible values: unspecified, landscape or portrait.
+	#SupportedOrientations: unspecified
+	#CanInstallToExternalStorage: False
+#End Region
+
+#Region  Activity Attributes 
+	#FullScreen: False
+	#IncludeTitle: True
+#End Region
+
+Sub Process_Globals
+	Private nativeMe As JavaObject
+	Dim rp As RuntimePermissions
+
+End Sub
+
+Sub Globals
+	'These global variables will be redeclared each time the activity is created.
+	'These variables can only be accessed from this module.
+
+	Private Button1 As Button
+	Private Panel1 As Panel
+	Private L1 As Label
+	Private ZX1 As ZxingBarcodeScanner
+	Dim flag As Int = 0
+	Dim runningavg As Int = 127
+	Private L3 As Label
+	Private Button2 As Button
+	Dim scanStarted As Boolean = False
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+	Dim phn As Phone
+	
+	'If FirstTime=False Then Return
+
+	'Do not forget to load the layout file created with the visual designer. For example:
+	phn.SetScreenOrientation(0)
+	Activity.LoadLayout("1")
+
+	Dim Result As Boolean = True
+	If Not(rp.Check(rp.PERMISSION_CAMERA)) Then
+		rp.CheckAndRequest(rp.PERMISSION_CAMERA)
+		Wait For Activity_PermissionResult (Permission As String, Result As Boolean)
+	End If
+	If Result Then
+	
+	
+		nativeMe.InitializeContext
+		
+		L3.Text = ""
+		ZX1.LaserColor = Colors.Cyan
+		ZX1.MaskColor = Colors.ARGB(150, 0, 0, 200)
+		ZX1.BorderColor = Colors.Magenta
+		ZX1.BorderStrokeWidth = 7
+		ZX1.BorderLineLength = 100
+		
+		'ZX1.AutoFocusInterval = Main.Scaner_Autofocus' 200
+		ZX1.AutoFocus = True
+		ZX1.FocusMode = ZX1.FOCUS_MODE_AUTO
+		'zx1.FocusMode = zx1.FOCUS_MODE_CONTINUOUS_PICTURE
+		'zx1.FocusMode = zx1.FOCUS_MODE_CONTINUOUS_VIDEO
+		'zx1.FocusMode = zx1.FOCUS_MODE_INFINITY
+		'zx1.FocusMode = zx1.FOCUS_MODE_MACRO
+		
+		
+		ZX1.Visible = False
+		
+		
+		'habre scanner
+		'Sleep(200)
+		'B2_Click
+			
+	Else
+		ToastMessageShow("Permission not granted", True)
+		Return
+	End If
+End Sub
+
+Sub Activity_Resume
+
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+
+End Sub
+
+Sub Activity_PermissionResult (Permission As String, Result As Boolean)
+Log(Permission)
+
+Select Case Permission
+	Case rp.PERMISSION_CAMERA
+		If Result=True Then
+			'Permisos=Permisos+1
+		End If
+	
+End Select
+End Sub
+Sub Button1_Click
+	ZX1.Color=Colors.ARGB(0, 0, 0, 0)
+	ZX1.Visible = True
+	ZX1.startScanner
+	'zx1.TurnFlashOn
+
+	scanStarted = True
+	Log(ZX1.isFlashOn)
+	ZX1.TurnFlashOn 
+	'ZX1.toggleFlash
+	'ZX1.TurnFlashOn
+
+End Sub
+Sub zx1_brightness_changed (bright As Int )                        'ADDED 6 MARCH 2016
+'	Log("bright = " & bright)                                      'this is the average brightness of the frame that was captured for possible barcode extraction
+flag = flag + 1
+L1.Text = "Brigtness = " & bright
+If flag = 30 Then                                              'I only want to use the average brightness of every 30th frame to calculate a running brigtness average
+	flag = 0                                                   'reset the count to zero for the next 30 frames
+	If bright < 150 Then                                       'discard excessive high brigness values
+		runningavg = (runningavg + bright) / 2
+'			Log("runningavg brightness = " & runningavg)
+		If runningavg < 70 Then
+			If Not(ZX1.isFlashOn) Then ZX1.TurnFlashOn
+		Else if runningavg > 115 Then
+			If ZX1.isFlashOn Then ZX1.TurnFlashOff
+		End If
+		End If
+	End If
+	L3.Text = "isFlashOn = " & ZX1.isFlashOn
+End Sub
+#If Java
+
+import android.os.Vibrator;
+import android.content.Context;
+
+import android.media.ToneGenerator;
+import android.media.AudioManager;
+
+/**
+*Vibrate with a given pattern. 
+*Pass in an array of Longs that are the durations for which to turn on or off the vibrator in milliseconds. 
+*The first value indicates the number of milliseconds to wait before turning the vibrator on. The next 
+*value indicates the number of milliseconds for which to keep the vibrator on before turning it off. 
+*Subsequent values alternate between durations in milliseconds to turn the vibrator off or to turn the vibrator on.
+*Parameters:
+*pattern ---> an array of longs of times for which to turn the vibrator on or off.
+*repeat ---> the index into pattern at which to repeat, or -1 if you don't want to repeat.
+*
+*You need to add the following to the manifest file of the B4A project:
+*AddPermission("android.permission.VIBRATE")
+*/
+public void vibratePattern(long[] pattern, int repeat) {
+    
+  Vibrator v = (Vibrator) BA.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+  if (v.hasVibrator()) {
+    v.vibrate(pattern, repeat);
+  }
+}
+
+/**
+*Cancel vibration (in case of method vibratePattern being active)
+*You need to add the following to the manifest file of the B4A project:
+*AddPermission("android.permission.VIBRATE")
+*
+*/
+public void vibrateCancel(int dummy) {
+    
+  Vibrator v = (Vibrator) BA.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+  if (v.hasVibrator()) {
+     v.cancel();
+  }
+}
+
+/**
+*Vibrate continuously for the specified number of milliseconds 
+*You need to add the following to the manifest file of the B4A project:
+*AddPermission("android.permission.VIBRATE")
+*/
+public void vibrateOnce(long duration) {
+    
+  Vibrator v = (Vibrator) BA.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+  if (v.hasVibrator()) {
+     v.vibrate(duration);
+  }
+}
+
+
+  public void playTone() {
+	  final ToneGenerator tg = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100);
+	  tg.startTone(ToneGenerator.TONE_PROP_BEEP);
+  }	  
+
+#End If
+
+
+
+Sub B2_Click
+	ZX1.TurnFlashOff
+' 
+'	ZX1.Visible = True
+'	ZX1.startScanner
+'	'zx1.TurnFlashOn
+'
+'	scanStarted = True
+'	Log(ZX1.isFlashOn)
+End Sub
