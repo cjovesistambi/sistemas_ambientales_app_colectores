@@ -18,7 +18,7 @@ Version=9.801
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4A Example_icon
-	#VersionCode: 2
+	#VersionCode: 3
 	#VersionName: 
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: unspecified
